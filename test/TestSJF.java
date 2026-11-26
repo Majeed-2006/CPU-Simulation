@@ -9,11 +9,16 @@ import model.ExecutionSnapshot;
 import model.Process;
 import scheduler.SJFScheduler;
 
+/**
+ * Hardcoded tests for the SJF scheduler.
+ * Main calls runSJFTests() to run all of them.
+ */
 public class TestSJF {
 
+    // all experiment results are collected here, then saved to results/results_sjf.csv
     private static StringBuilder csv = new StringBuilder("test,cs,avg_waiting,avg_turnaround\n");
 
-    public static void main(String[] args) {
+    public static void runSJFTests() {
         // Test 1: CS = 1
         // Expected: P1 finish 9, TAT 9, WT 4, RT 0 | P2 finish 4, TAT 3, WT 1, RT 1
         Process[] test1 = {
@@ -105,7 +110,9 @@ public class TestSJF {
         System.out.printf("Average Waiting Time: %.2f%n%n", totalWaiting / processes.length);
     }
 
+    // Runs the scheduler silently (no printing) and returns {avgWaiting, avgTurnaround}
     private static double[] simulate(Process[] original, int cs) {
+        // fresh copies, because Process objects change while running
         Process[] processes = new Process[original.length];
         for (int i = 0; i < original.length; i++) {
             processes[i] = original[i].copy();
@@ -133,22 +140,25 @@ public class TestSJF {
         return new double[] { totalWaiting / processes.length, totalTurnaround / processes.length };
     }
 
+    // Runs one test case with CS = 0..4, prints the averages and stores them for the CSV file
     private static void runExperiment(String name, Process[] processes) {
         System.out.println("Experiment: " + name);
         System.out.println("CS | Avg Waiting | Avg Turnaround");
         for (int cs = 0; cs <= 4; cs++) {
             double[] result = simulate(processes, cs);
             System.out.printf("%d  | %.2f        | %.2f%n", cs, result[0], result[1]);
+            // Locale.US makes sure the decimal point is "." and not ","
             csv.append(String.format(Locale.US, "%s,%d,%.2f,%.2f\n", name, cs, result[0], result[1]));
         }
         System.out.println();
     }
 
+    // Writes everything to results/results_sjf.csv (the folder is created if it does not exist)
     private static void saveCsv() {
         try {
             Files.createDirectories(Path.of("results"));
-            Files.writeString(Path.of("results", "results.csv"), csv.toString());
-            System.out.println("Saved: results/results.csv");
+            Files.writeString(Path.of("results", "results_sjf.csv"), csv.toString());
+            System.out.println("Saved: results/results_sjf.csv");
         } catch (IOException e) {
             System.out.println("Could not save the CSV file: " + e.getMessage());
         }
