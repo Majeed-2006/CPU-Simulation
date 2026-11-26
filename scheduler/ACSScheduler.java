@@ -19,6 +19,7 @@ public class ACSScheduler {
     private final int contextSwitchTime;
     private final int quantum;
     private int completedCount;
+    private static final int AGING_INTERVAL = 4;
 
     // Ready queues
     private final Queue<Process> tier1 = new LinkedList<>();
@@ -43,12 +44,22 @@ public class ACSScheduler {
         tier1.add(p);
     }
 
+    private void applyAging(int currentTime) {
+    for (Process p : tier2) {
+        int waitingTime = currentTime - p.tier2ArrivalTime;
+        int agingBonus = waitingTime / AGING_INTERVAL;
+
+        p.currentPriority = Math.max(1, p.initialPriority - agingBonus);
+    }
+}
+
     /**
      * Advances the simulation by one time unit [currentTime, currentTime + 1).
      * Main/GUI must call arrive() for every process arriving at currentTime
      * BEFORE calling step(currentTime).
      */
     public ExecutionSnapshot step(int currentTime, LocalTime startTime) {
+        applyAging(currentTime);
         // 1) If the CPU is free and no context switch is in progress, pick the next process
         if (running == null && pending == null) {
             Process next = pickNext(currentTime);
@@ -130,7 +141,24 @@ public class ACSScheduler {
      * A process picked from here runs non-preemptively until it finishes.
      */
     private Process pickFromTier2(int now) {
-        return null; // TODO: Tier 2 owner
+        if (tier2.isEmpty()) {
+            return null;
+        }
+        Process best = tier2.get(0);
+        for (Process p : tier2) {
+            // Lower priority number = Higher priority
+            if (p.currentPriority < best.currentPriority) {
+                best = p;
+            }
+            // Same priority: Older process goes first
+            else if (p.currentPriority == best.currentPriority
+                    && p.tier2ArrivalTime < best.tier2ArrivalTime) {
+                best = p;
+            }
+        }
+
+        tier2.remove(best);
+        return best;
     }
 
     // ================= SNAPSHOT =================
