@@ -34,6 +34,7 @@ public class Main {
  * or use TestSJF.java / TestACS.java in the 'test' package for quick hardcoded tests.
  */
     private static void runConsoleMode(Scanner sc) {
+        TestSJF.runSJFTests();
       
     }
 }
